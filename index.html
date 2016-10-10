@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>sound oscilloscope</title>
+    </head>
+    <body style="background-color: gray">
+        <canvas id="plot" width=1024 height=300></canvas>
+
+    </body>
+</html>
+<script>
+window.AudioContext = window.AudioContext || window.webkitAudioContext;
+var context = new AudioContext();
+navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+navigator.getUserMedia({audio: true}, function(stream) {
+    var microphone = context.createMediaStreamSource(stream);
+    // Create an AudioNode from the stream.
+    var mediaStreamSource = context.createMediaStreamSource( stream );
+    var analyser = context.createAnalyser();
+    analyser.fftSize = 2048;
+    mediaStreamSource.connect( analyser );
+    start(analyser);
+},e => alert('unable to get audio'));
+
+var drawvisual;
+var trigger = 0;
+
+function start(analyser){
+    var bufferLength = analyser.frequencyBinCount;
+    console.log(bufferLength);
+    var dataArray = new Uint8Array(bufferLength);
+    var canvas = document.querySelector('#plot');
+    var canvasCtx = canvas.getContext("2d");
+    var WIDTH = canvas.width;
+    var HEIGHT = canvas.height;
+
+    function draw(){
+      drawVisual = requestAnimationFrame(draw);
+
+      analyser.getByteTimeDomainData(dataArray);
+
+      canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+      canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = 'rgb(0, 0, 200)';
+
+      canvasCtx.beginPath();
+
+      var i = getTrigger("rising",dataArray,trigger);
+      console.log("triggered",i);
+      var x = 0;
+      for(i; i < bufferLength; i++) {
+        var d = dataArray[i];
+        var y = HEIGHT - d - (HEIGHT/2 - 128);
+        canvasCtx.lineTo(x, y);
+        x++;
+      }
+      canvasCtx.stroke();
+    }
+    draw();
+}
+
+function getTrigger(triggerType, buffer, trigger){
+    trigger = trigger + 128;
+    var condition = {
+        rising:  (prev,curr) => prev === true && curr === false,
+        falling: (prev,curr) => prev === false && curr === true,
+        toggle:  (prev,curr) => prev !== curr
+    }[triggerType];
+
+    var previous = buffer[0] < trigger;
+    for (var i = 1; i < buffer.length; i++){
+        var current = buffer[i] < trigger;
+        if (condition(previous, current)){
+            return i;
+        }
+        previous = current;
+    }
+}
+</script>

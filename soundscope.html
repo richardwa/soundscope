@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>sound oscilloscope</title>
+        <script src="audio.js"></script>
+        <script src="draw.js"></script>
+        <script src="oscilloscope.js"></script>
+    </head>
+    <body style="background-color: gray">
+        <canvas id="plot" width=1024 height=300></canvas>
+    </body>
+</html>
+<script>
+var bufsize = 256;
+var graph = Graph(document.querySelector("#plot"));
+var scope = Oscilloscope(graph, bufsize * 4 + 1);
+
+AudioHandler.getDevices().then(d => {
+    console.log(d)
+});
+
+AudioHandler.attachListener("", 0, bufsize, scope.onData)
+.then( stream => {
+    stream.start();
+});
+
+</script>
