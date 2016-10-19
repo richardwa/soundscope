@@ -1,2 +1,3 @@
 # soundscope
-microphone based html oscilloscope
+Microphone based html oscilloscope.  Just a POC for now.
+demo: https://richardwa.github.io/soundscope/
